@@ -9,7 +9,7 @@ The Elon Twitter shock, sent a lot of people looking for new homes.  Many came t
 Mastodon, many many new servers, not a comensurate increase in chat so we'll see 
 what this means.   https://fediverse.observer/stats
 
-At a minimum there is a lot of need admins, and its 
+At a minimum there is a lot of need for admins, and its 
 going to be a time of lots of chat about how to set these things up and 
 how work out the problems. So I am IN.  
 
