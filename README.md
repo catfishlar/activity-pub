@@ -40,3 +40,5 @@ Fediverse :
  * Apps and Instances that connect to ActivityPub Info at. https://fediverse.party/en/fediverse/
  * Stats and map https://fediverse.observer/stats
 
+Security:
+  * [Ars Technica How secure a Twitter replacement is Mastodon? Let us count the ways - Dan Goodin](https://arstechnica.com/information-technology/2022/11/how-secure-a-twitter-replacement-is-mastodon-let-us-count-the-ways/)
