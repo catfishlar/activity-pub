@@ -42,3 +42,7 @@ Fediverse :
 
 Security:
   * [Ars Technica How secure a Twitter replacement is Mastodon? Let us count the ways - Dan Goodin](https://arstechnica.com/information-technology/2022/11/how-secure-a-twitter-replacement-is-mastodon-let-us-count-the-ways/)
+
+## Setting up Cluster
+
+[The Cluster and install](bare-metal-cluster/README.md)
