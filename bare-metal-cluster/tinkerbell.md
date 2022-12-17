@@ -26,7 +26,7 @@ The Boot Flow
 
 Custom Scripting and Old Legacy Software.  THese tech are from the 90s.
 
-### Tinkerbell
+### Tinkerbell Inside
 
 Tinkerbell is new. 2020s baremetal stack. 
 
@@ -79,3 +79,41 @@ Typically stream an OS that gets written to a block device.
 PostInstall Actions. 
  * Modify the newly deployed OSm disks, files or install boot loaders. 
  * Kexec/reboot - either reboot the machine or kexec to immediately drop into the new OS.
+
+
+## The Install 
+
+First thing that kinda drives me nuts, is that there isn't anywhere in Tinkerbell that
+says that you can install things on a mac.. but on [EKS Anywhere on Bare Metal docs](https://anywhere.eks.amazonaws.com/docs/reference/baremetal/bare-prereq/)
+you have things like this:
+
+> All EKS Anywhere machines, including the Admin, control plane and worker machines, must be on the same 
+> layer 2 network and have network connectivity to the BMC (IPMI, Redfish, and so on).
+
+And [Install EKS Anywhere](https://anywhere.eks.amazonaws.com/docs/getting-started/install/)
+
+>If you are using Docker Desktop, you need to know that:
+> * For EKS Anywhere Bare Metal, Docker Desktop is not supported
+> * For EKS Anywhere vSphere, if you are using Mac OS Docker Desktop 4.4.2 or newer 
+> "deprecatedCgroupv1": true must be set in 
+> ~/Library/Group\ Containers/group.com.docker/settings.json.
+ 
+In the Tinkerbell docs I didn't see any mention of this, but I did see them discussing it 
+in a video.  One said, that you can set up a Virtual Box Ubuntu and then a Bridge to the Network
+of the Laptop.  So that is what I am doing.  
+
+Covering that in another [doc on virtualbox](virtualbox.md)
+
+The other thing we need to do is get my dhcp server to not perform DHCP services 
+for my cluster.  Covering that here [doc on my router](router.md)
+
+So from the Router we mapped the mac addresses to IP reservations and the IP reservations 
+to local DNS names. 
+
+
+    i5nuc1 is 192.168.0.50
+    i5nuc2 is 192.168.0.51
+    i5nuc3 is 192.168.0.52
+    i3nuc1 is 192.168.0.53
+    i3nuc2 is 192.168.0.54
+    i3nuc3 is 192.168.0.55
