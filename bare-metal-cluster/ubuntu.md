@@ -125,3 +125,27 @@ Then redo the update.
 And finally install. 
 
     sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+Test.
+
+    sudo docker run hello-world
+
+Seeing the version of docker-engine
+
+    docker version
+    docker compose version
+
+### Installing Kubectl with snap
+
+I found this [Official Kubectl install instructions](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+in the section "Install using other package management"
+
+>      snap install kubectl --classic
+>      kubectl version --client
+
+Looking up `--classic` I got this link on [classic confinement](https://ubuntu.com/blog/how-to-snap-introducing-classic-confinement)
+
+So. 
+
+        ubuntu@Tinkerbell:~/src/sandbox$ sudo snap install kubectl --classic
+        kubectl 1.26.0 from Canonical✓ installed
