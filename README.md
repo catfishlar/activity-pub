@@ -24,14 +24,8 @@ at first twitter had been my place to see tech stuff.
 
 ## References
 
- * Debian, nginx, react.js, node.js (for Streaming API) ,  Ruby on rails, Postgres. https://github.com/mastodon/mastodon
- * The Architecture of Mastodon. https://softwaremill.com/the-architecture-of-mastodon/ 
- * Hachyderm.io. Kris Nova’s setup https://medium.com/@kris-nova/hachyderm-infrastructure-74f518bc7472
- * Scaling a Mastadon Instance. https://leah.is/posts/scaling-the-mastodon/
- * Scaling Mastadon.  https://hazelweakly.me/blog/scaling-mastodon/
-
-  
 ActivityPub has integrated apps for all your big tech needs.
+ * Twitter -> Mastodon https://joinmastodon.org/
  * YouTube ->  PeerTube https://joinpeertube.org/
  * Instagram -> PixelFed https://pixelfed.org/
  * Medium/Substack -> Write Freely https://writefreely.org/
@@ -46,3 +40,7 @@ Security:
 ## Setting up Cluster
 
 [The Cluster and install](bare-metal-cluster/README.md)
+
+## Setting up Mastodon
+
+[Mastodon Stack](mastodon/README.md)

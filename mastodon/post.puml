@@ -1,0 +1,15 @@
+@startuml
+Ruby_on_Rails -> PostgrSQL : post Toot
+Ruby_on_Rails -> Redis : post Toot to local Follow Homes
+Ruby_on_Rails -> Redis : push to Queue per Server with Followers
+Ruby_on_Rails -> Sidekiq : Create Job to Propage to Followers
+Sidekiq -> Redis : Pull Queue for Remote Followers
+Redis -> Sidekiq : Toots in Queue for A Remote server
+Sidekiq -> Remote_RoR : Propagate Toot via Http API
+Remote_RoR -> Remote_Redis : Ingress Queue
+Remote_Sidekiq -> Remote_Redis : Pull Ingress Queue
+Remote_Redis -> Remote_Sidekiq : Toot
+Remote_Sidekiq -> Remote_Redis : Add to Follower Feeds
+Remote_Sidekiq -> Remote_PostgreSQL : Store Posts and Interactions
+
+@enduml
