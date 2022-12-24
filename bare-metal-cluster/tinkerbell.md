@@ -26,9 +26,13 @@ The Boot Flow
 
 Custom Scripting and Old Legacy Software.  THese tech are from the 90s.
 
-### Tinkerbell
+### Tinkerbell Inside
 
 Tinkerbell is new. 2020s baremetal stack. 
+
+[Architecture ref](https://docs.tinkerbell.org/architecture/)
+
+![tinkerbell-architecture](images/tinkerbell-architecture.png)
 
 Components: 
  * Boots - DHCP & IPXE Server - reimplemented TFTP and PXE in Go. 
@@ -79,3 +83,277 @@ Typically stream an OS that gets written to a block device.
 PostInstall Actions. 
  * Modify the newly deployed OSm disks, files or install boot loaders. 
  * Kexec/reboot - either reboot the machine or kexec to immediately drop into the new OS.
+
+
+## The Install 
+
+First thing that kinda drives me nuts, is that there isn't anywhere in Tinkerbell that
+says that you can install things on a mac.. but on [EKS Anywhere on Bare Metal docs](https://anywhere.eks.amazonaws.com/docs/reference/baremetal/bare-prereq/)
+you have things like this:
+
+> All EKS Anywhere machines, including the Admin, control plane and worker machines, must be on the same 
+> layer 2 network and have network connectivity to the BMC (IPMI, Redfish, and so on).
+
+And [Install EKS Anywhere](https://anywhere.eks.amazonaws.com/docs/getting-started/install/)
+
+>If you are using Docker Desktop, you need to know that:
+> * For EKS Anywhere Bare Metal, Docker Desktop is not supported
+> * For EKS Anywhere vSphere, if you are using Mac OS Docker Desktop 4.4.2 or newer 
+> "deprecatedCgroupv1": true must be set in 
+> ~/Library/Group\ Containers/group.com.docker/settings.json.
+ 
+In the Tinkerbell docs I didn't see any mention of this, but I did see them discussing it 
+in a video.  One said, that you can set up a Virtual Box Ubuntu and then a Bridge to the Network
+of the Laptop.  So that is what I am doing.  
+
+### Virtual Box Control Server for Provisioning Stack
+
+Covering that in another [doc on virtualbox](virtualbox.md)
+
+In the end I have a a new ubuntu 22.04 machine Git, Docker, and Docker Compose
+
+      ubuntu@Tinkerbell:~/src$ ip address
+      ...
+      2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+          link/ether 08:00:27:1d:c9:7e brd ff:ff:ff:ff:ff:ff
+          inet 192.168.0.45/24 brd 192.168.0.255 scope global dynamic noprefixroute enp0s3
+             va
+      ubuntu@Tinkerbell:~/src$ git version
+      git version 2.34.1
+      ubuntu@Tinkerbell:~/src$ docker compose version 
+      Docker Compose version v2.14.1
+      ubuntu@Tinkerbell:~/src$ docker version
+      Client: Docker Engine - Community
+       Version:           20.10.22
+       API version:       1.41
+
+`ubuntu` is the admin account with no password sudo, and youc an no password ssh from the mac. 
+
+### Home Router Config for DHCP Reservations
+
+The other thing we need to do is get my dhcp server to not perform DHCP services 
+for my cluster.  I didn't take my home router DHCP out of the address range, but rather 
+manually assigned the mac addresses to the same IPs I am going to set them up with 
+from Tinkerbell.  
+
+//TODO: Did Tinkerbell and the kids work ok with Home Router set up this way?
+
+Covering that here [doc on my router](router.md)
+
+So from the Router we mapped the mac addresses to IP reservations and the IP reservations 
+to local DNS names. 
+
+
+    i5nuc1 is 192.168.0.50
+    i5nuc2 is 192.168.0.51
+    i5nuc3 is 192.168.0.52
+    i3nuc1 is 192.168.0.53
+    i3nuc2 is 192.168.0.54
+    i3nuc3 is 192.168.0.55
+
+### Bringing up a Provisioner Stack with Docker Compose
+
+[Tinkerbell Sandbox doc for Docker Compose](https://github.com/tinkerbell/sandbox/blob/main/docs/quickstarts/COMPOSE.md)
+
+Git the sandbox
+
+      ubuntu@Tinkerbell:~$ mkdir src
+      ubuntu@Tinkerbell:~$ cd src
+      ubuntu@Tinkerbell:~/src$ git clone https://github.com/tinkerbell/sandbox.git
+      Cloning into 'sandbox'...
+      remote: Enumerating objects: 1680, done.
+      remote: Counting objects: 100% (808/808), done.
+      remote: Compressing objects: 100% (366/366), done.
+      remote: Total 1680 (delta 498), reused 571 (delta 437), pack-reused 872
+      Receiving objects: 100% (1680/1680), 1.00 MiB | 2.47 MiB/s, done.
+      Resolving deltas: 100% (846/846), done.
+      ubuntu@Tinkerbell:~/src$ cd sandbox
+      ubuntu@Tinkerbell:~/src/sandbox$
+
+So the next step is.. confounding:
+
+>     # This should be an IP that's on an interface where you will be provisioning machines
+>     export TINKERBELL_HOST_IP=192.168.2.111
+   
+Is the ip of the virtualbox machine or another IP?  I think it is.  :(
+
+      export TINKERBELL_HOST_IP=192.168.0.45
+
+The next thing is interesting... It's going to autogenerate my Tink hardware, template, 
+and workflow records for a machine it's going to provision.  So I think, this an 
+actual install.  
+
+    export TINKERBELL_CLIENT_IP=192.168.0.50
+    export TINKERBELL_CLIENT_MAC=b8:ae:ed:78:6c:60
+
+Then: 
+
+    ubuntu@Tinkerbell:~/src/sandbox$ cd deploy/stack/compose
+    ubuntu@Tinkerbell:~/src/sandbox/deploy/stack/compose$ sudo docker compose up -d
+
+After I get the command line back I have this in my images (hello-world was from docker install)
+
+      ubuntu@Tinkerbell:~/src/sandbox$ sudo docker images
+      REPOSITORY                           TAG            IMAGE ID       CREATED         SIZE
+      nginx                                alpine         1e415454686a   4 days ago      40.7MB
+      bash                                 4.4            afc7a610a9d0   5 weeks ago     11.4MB
+      quay.io/tinkerbell/hegel             v0.8.0         ef520ce16dee   7 weeks ago     63MB
+      bitnami/kubectl                      1.24.6         e8299656b106   2 months ago    221MB
+      quay.io/tinkerbell/tink-controller   v0.8.0         36cd3cf9555b   2 months ago    55.4MB
+      quay.io/tinkerbell/tink              v0.8.0         4e612f7ba7ed   2 months ago    58.5MB
+      rancher/k3s                          v1.24.4-k3s1   a32cc5db09d0   3 months ago    214MB
+      quay.io/tinkerbell/rufio             v0.1.0         833ea939514c   4 months ago    57.8MB
+      quay.io/tinkerbell/boots             v0.7.0         54d356eccee5   5 months ago    63.8MB
+      hello-world                          latest         feb5d9fea6a5   15 months ago   13.3kB
+
+And these containers running: 
+
+      ubuntu@Tinkerbell:~/src/sandbox$ sudo docker ps --format "{{.Names}}: {{.Image}}"
+      compose-tink-controller-1: quay.io/tinkerbell/tink-controller:v0.8.0
+      compose-boots-1: quay.io/tinkerbell/boots:v0.7.0
+      compose-tink-server-1: quay.io/tinkerbell/tink:v0.8.0
+      compose-hegel-1: quay.io/tinkerbell/hegel:v0.8.0
+      compose-rufio-1: quay.io/tinkerbell/rufio:v0.1.0
+      compose-web-assets-server-1: nginx:alpine
+      compose-k3s-1: rancher/k3s:v1.24.4-k3s1
+
+The next step has me checking the sandbox workflow.  
+
+      ubuntu@Tinkerbell:~/src/sandbox$ KUBECONFIG=./state/kube/kubeconfig.yaml kubectl get workflow sandbox-workflow --watch
+      Command 'kubectl' not found, but can be installed with:
+      snap install kubectl
+      Please ask your administrator.
+
+Looking a bit at `snap`  I found this [Official Kubectl install instructions](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+in the section "Install using other package management"
+
+>      snap install kubectl --classic
+>      kubectl version --client
+
+Looking up `--classic` I got this link on [classic confinement](https://ubuntu.com/blog/how-to-snap-introducing-classic-confinement)
+
+So:
+
+      ubuntu@Tinkerbell:~/src/sandbox$ sudo snap install kubectl --classic
+      kubectl 1.26.0 from Canonical✓ installed
+      ubuntu@Tinkerbell:~/src/sandbox$ KUBECONFIG=./state/kube/kubeconfig.yaml kubectl get workflow sandbox-workflow --watch
+      W1218 08:31:15.849502 1444840 loader.go:222] Config not found: ./state/kube/kubeconfig.yaml
+      E1218 08:31:15.882064 1444840 memcache.go:238] couldn't get current server API group list: <nil>
+      E1218 08:31:15.889464 1444840 memcache.go:238] couldn't get current server API group list: <nil>
+      E1218 08:31:15.895075 1444840 memcache.go:238] couldn't get current server API group list: <nil>
+      E1218 08:31:15.901406 1444840 memcache.go:238] couldn't get current server API group list: <nil>
+      error: the server doesn't have a resource type "workflow"
+
+I guess this explains why when I turned on my machine to be provisioned, it didn't work. 
+
+Also why I document every step when doing (dev)ops stuff.  The failures and the side research are 
+a good deal of the time and learning that is needed to do it right the next time.  
+
+Added Snap install kubectl to the [ubuntu page](ubuntu.md)
+
+So next I 
+
+      ubuntu@Tinkerbell:~/src/sandbox/deploy/stack/compose$ sudo docker compose down
+      ubuntu@Tinkerbell:~/src/sandbox/deploy/stack/compose$ sudo docker compose up
+
+and I start seeing stuff like this.. 
+
+      compose-boots-1                         | panic: listen and serve http: listen tcp 192.168.56.4:80: bind: cannot assign requested address
+      compose-boots-1                         | 
+      compose-boots-1                         | goroutine 171 [running]:
+      compose-boots-1                         | github.com/packethost/pkg/log.Logger.Fatal({{0x1837131?, 0xc000100dc0?}, 0xc000366758?, 0xc000201bd0?}, {0x1a7c9c0?, 0xc000767d10}, {0x0, 0x0, 0x0})
+      compose-boots-1                         | 	/home/runner/go/pkg/mod/github.com/packethost/pkg@v0.0.0-20210325161133-868299771ae0/log/log.go:121 +0xa6
+      compose-boots-1                         | main.(*BootsHTTPServer).ServeHTTP(0xc000823280, {0xc0006dbab0?, 0xc0008243f0?, 0xc000824420?, 0xc000824450?}, {0xc00004200a, 0xf}, {0x1815f62, 0x6}, 0xc0006dd1a0)
+      compose-boots-1                         | 	/home/runner/work/boots/boots/cmd/boots/http.go:136 +0xa05
+      compose-boots-1                         | created by main.main
+      compose-boots-1                         | 	/home/runner/work/boots/boots/cmd/boots/main.go:224 +0x1c0e
+      compose-boots-1 exited with code 2
+
+The addresses were already bound. 
+
+So I `ctrl c`'d out of it and then shut down and restarted the virtualbox. 
+
+And same thing...  so I guess I am just seeing all these logs because I install `kubectl` and actually
+my setup is wrong... great. 
+
+So why is it trying to put these in the 192.168.56 subnet.. must be internal to docker. 
+
+Looking for first mention of this ip:
+
+      ubuntu@Tinkerbell:~/src/sandbox/deploy/stack/compose$ nohup sudo docker compose up >& out.out &
+
+So I `tail -f` that file till it starts messing up.  
+then:
+
+      ubuntu@Tinkerbell:~/src/sandbox/deploy/stack/compose$ grep 192.168.56 out.out
+      compose-boots-1                         | {"level":"info","ts":1671384407.5298123,"caller":"boots/main.go:196","msg":"serving iPXE binaries from local HTTP server","service":"github.com/tinkerbell/boots","pkg":"main","addr":"192.168.56.4/ipxe/"}
+      compose-boots-1                         | {"level":"info","ts":1671384407.530229,"caller":"boots/main.go:223","msg":"serving http","service":"github.com/tinkerbell/boots","pkg":"main","addr":"192.168.56.4:80"}
+      compose-boots-1                         | {"level":"error","ts":1671384407.5310154,"caller":"boots/http.go:136","msg":"listen and serve http: listen tcp 192.168.56.4:80: bind: cannot assign requested address","service":"github.com/tinkerbell/boots","pkg":"main","error":"listen and serve http: listen tcp 192.168.56.4:80: bind: cannot assign requested address","errorVerbose":"listen tcp 192.168.56.4:80: bind: cannot assign requested address\nlisten and serve http\nmain.(*BootsHTTPServer).ServeHTTP\n\t/home/runner/work/boots/boots/cmd/boots/http.go:135\nruntime.goexit\n\t/nix/store/zcnak5ycnrgwnwhzlm5kfylw8dls7xpj-go-1.18.1/share/go/src/runtime/asm_amd64.s:1571"}
+      compose-boots-1                         | panic: listen and serve http: listen tcp 192.168.56.4:80: bind: cannot assign requested address
+
+So its looking for assets from that ip.  
+
+      ubuntu@Tinkerbell:~/src$ grep -r 192.168.56 sandbox/deploy/stack/compose/
+      sandbox/deploy/stack/compose/postgres/.env:TINKERBELL_CLIENT_IP=192.168.56.43
+      sandbox/deploy/stack/compose/postgres/.env:TINKERBELL_HOST_IP=192.168.56.4
+      sandbox/deploy/stack/compose/postgres/generate-tls-certs/csr.json:    "192.168.56.4",
+      sandbox/deploy/stack/compose/postgres/create-tink-records/manifests/template/ubuntu-equinix-metal.yaml:          IMG_URL: "http://192.168.56.4:8080/focal-server-cloudimg-amd64.raw.gz"
+      sandbox/deploy/stack/compose/postgres/create-tink-records/manifests/template/ubuntu.yaml:          IMG_URL: "http://192.168.56.4:8080/focal-server-cloudimg-amd64.raw.gz"
+      sandbox/deploy/stack/compose/postgres/create-tink-records/manifests/hardware/hardware.json:            "address": "192.168.56.43",
+      sandbox/deploy/stack/compose/postgres/create-tink-records/manifests/hardware/hardware-equinix-metal.json:            "address": "192.168.56.43",
+      sandbox/deploy/stack/compose/postgres/create-tink-records/manifests/hardware/hardware-equinix-metal.json:            "gateway": "192.168.56.4",
+      sandbox/deploy/stack/compose/.env:TINKERBELL_CLIENT_IP=192.168.56.43
+      sandbox/deploy/stack/compose/.env:TINKERBELL_HOST_IP=192.168.56.4
+      sandbox/deploy/stack/compose/manifests/manifests.yaml:          address: 192.168.56.43
+      sandbox/deploy/stack/compose/manifests/manifests.yaml:              IMG_URL: "http://192.168.56.4:8080/focal-server-cloudimg-amd64.raw.gz"
+
+So despite having set the environment variable.. 
+
+      ubuntu@Tinkerbell:~/src/sandbox/deploy/stack/compose$ echo $TINKERBELL_CLIENT_IP
+      192.168.0.50
+
+It didn't get used.  Possibly because of sudo. Ah.. thats it. 
+
+      ntu@Tinkerbell:~/src/sandbox/deploy/stack/compose$ su -
+      Password: 
+      root@Tinkerbell:~# pwd
+      /root
+      root@Tinkerbell:~# cd /home/ubuntu/src/sandbox/deploy/stack/compose/
+      root@Tinkerbell:/home/ubuntu/src/sandbox/deploy/stack/compose# docker ps
+      CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+      root@Tinkerbell:/home/ubuntu/src/sandbox/deploy/stack/compose# export TINKERBELL_HOST_IP=192.168.0.45
+      root@Tinkerbell:/home/ubuntu/src/sandbox/deploy/stack/compose# export TINKERBELL_CLIENT_IP=192.168.0.50
+      root@Tinkerbell:/home/ubuntu/src/sandbox/deploy/stack/compose# export TINKERBELL_CLIENT_MAC=b8:ae:ed:78:6c:60
+
+docker compose up.. after its quiet.. turn machine on, go to Boot menu and pick LAN.  Better!
+
+Now I get this. 
+
+      compose-boots-1                         | {"level":"info","ts":1671386506.9364069,"caller":"dhcp4-go@v0.0.0-20190402165401-39c137f31ad3/handler.go:105","msg":"","service":"github.com/tinkerbell/boots","pkg":"dhcp","pkg":"dhcp","event":"recv","mac":"b8:ae:ed:78:6c:60","via":"0.0.0.0","iface":"enp0s3","xid":"\"ed:78:6c:60\"","type":"DHCPDISCOVER","secs":28}
+      compose-boots-1                         | {"level":"info","ts":1671386506.9365258,"caller":"boots/dhcp.go:88","msg":"parsed option82/circuitid","service":"github.com/tinkerbell/boots","pkg":"main","mac":"b8:ae:ed:78:6c:60","circuitID":""}
+      compose-boots-1                         | {"level":"error","ts":1671386506.9366238,"caller":"boots/dhcp.go:101","msg":"retrieved job is empty","service":"github.com/tinkerbell/boots","pkg":"main","type":"DHCPDISCOVER","mac":"b8:ae:ed:78:6c:60","error":"discover from dhcp message: no hardware found","errorVerbose":"no hardware found\ngithub.com/tinkerbell/boots/client/kubernetes.(*Finder).ByMAC\n\t/home/runner/work/boots/boots/client/kubernetes/hardware_finder.go:100\ngithub.com/tinkerbell/boots/job.(*Creator).CreateFromDHCP\n\t/home/runner/work/boots/boots/job/job.go:105\nmain.dhcpHandler.serve\n\t/home/runner/work/boots/boots/cmd/boots/dhcp.go:99\nmain.dhcpHandler.ServeDHCP.func1\n\t/home/runner/work/boots/boots/cmd/boots/dhcp.go:60\ngithub.com/gammazero/workerpool.startWorker\n\t/home/runner/go/pkg/mod/github.com/gammazero/workerpool@v0.0.0-20200311205957-7b00833861c6/workerpool.go:218\nruntime.goexit\n\t/nix/store/zcnak5ycnrgwnwhzlm5kfylw8dls7xpj-go-1.18.1/share/go/src/runtime/asm_amd64.s:1571\ndiscover from dhcp message"}
+      compose-k3s-1                           | W1218 18:03:03.154145      14 info.go:53] Couldn't collect info from any of the files in "/etc/machine-id,/var/lib/dbus/machine-id"
+
+The key of which seems to be `,"mac":"b8:ae:ed:78:6c:60","error":"discover from dhcp message: no hardware found"`
+
+But what is this hardware, it can find the client, or it can't find the hardware in Tinkerbell's `hardware.yml`?
+
+Further in the message.  `"errorVerbose":"no hardware found\ngithub.com/tinkerbell/boots/client/kubernetes.(*Finder).ByMAC`
+
+So I went to https://github.com/tinkerbell/boots/blob/main/client/kubernetes  and `hardware_finder.go` seemed promising. 
+
+Found the [byMAC function] (https://github.com/tinkerbell/boots/blob/main/client/kubernetes/hardware_finder.go#:~:text=func%20(f%20*Finder)%20ByMAC(ctx%20context.Context%2C%20mac%20net.HardwareAddr%2C%20_%20net.IP%2C%20_%20string)%20(client.Discoverer%2C%20error)%20%7B)
+
+So what is this `hardwareList := &v1alpha1.HardwareList{}`?  Well this file imports 
+`github.com/tinkerbell/tink/pkg/apis/core/v1alpha1`  which looking around, I get a 
+[definition of HardwareList](https://github.com/tinkerbell/tink/blob/main/pkg/apis/core/v1alpha1/hardware_types.go#:~:text=type%20HardwareList%20struct,%7D)
+
+This means the hardware list. is wrong, not the client hardware.. it did not find an entry in the list.  
+
+So the weird thing is, in `sandbox/deploy/stack/compose/.env`
+
+>      TINKERBELL_HARDWARE_MANIFEST=/manifests/hardware/hardware.json
+>      TINKERBELL_TEMPLATE_MANIFEST=/manifests/template/ubuntu.yaml
+
+But neither of those are directories exist.  Given the / in the front, those must be relative to something other than this 
+directory.   
