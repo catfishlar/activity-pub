@@ -57,6 +57,14 @@ First it notifies the Origin Toot Server and then it proceeds as normal.
 
 ![Mastodon Remote Favorite Flow](images/favorite.png)
 
+>Let's say you write a post, and your followers are distributed across 50 servers. As a result, 50 Sidekiq 
+> jobs are created on the originating server. Now, if somebody replies to the post, we've got 1 Sidekiq 
+> job to propagate it to the original (if needed), and then 50 more. If you get 10 replies, that's a total 
+> of over 500 jobs.
+
+In this case 
+
+
 ### Scaling An Instance
 
 Here is a page to read carefully. [Mastadon Scaling Doc](https://github.com/mastodon/documentation/blob/master/content/en/admin/scaling.md)
@@ -100,15 +108,27 @@ And from the architecture article.
 
 ## The Code Base
 
-Ruby is insane with indirection and Ruby on Rails is insane with implicit behaviour.   It is the source of the 
+Ruby culture is insane with indirection and Ruby on Rails is full implicit behaviour.   RoR is the source of the 
 call for convention over configuration, so you really need to understand the conventions.   Good thing is 
-a little bit of Ruby on Rails review goes a long way. 
+a little bit of Ruby on Rails review goes a long way.   
 
 Another aspect of the Ruby world is that being dynamic and built on convention, the Ruby world became the center of 
 test first development.  Ruby programs have tests, partly because if they didn't you'd get all kinds of runtime errors 
 based on code paths never having been excersized.  Turns out Mastodon has a ton of Rspec Tests.  
 
 Intellij with Ruby and Rails plugins, and the spec directory will go a long way to teasing out what does what. 
+
+The front end is React.js, but since I really mostly interested in state and processing, I can pretty much ignore 
+the UI.  For example.  I wanted to know where to start with post of a Toot.  Well I look at the UI and there is a 
+default text of "Whats on your mind?", searching the code base for that, I get.  
+
+    "compose_form.placeholder": "What's on your mind?",
+
+From there I knew that javascript in rails goes in `app/javascript` seeing `mastodon` directory.. `actions` directory
+and then `compose.js`.  And hunting about you can see that this that dialog. 
+
+from there you see where it gets sent.. that will be the Ruby on Rails side.  At that point, its coming in as  model and 
+who cares what the UI did. 
 
 Reference: 
   * Github : https://github.com/mastodon/mastodon
