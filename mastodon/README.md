@@ -7,6 +7,7 @@
  * Scaling a Mastadon Instance. https://leah.is/posts/scaling-the-mastodon/
  * Scaling Mastadon.  https://hazelweakly.me/blog/scaling-mastodon/
 
+
 ## Architecture 
 
 Notes on https://softwaremill.com/the-architecture-of-mastodon/
@@ -135,4 +136,6 @@ Reference:
   * Rspec: Great way to understand the code is Testing.  The `mastodon/spec` directory.  
   * Rspec Github: https://github.com/rspec/rspec-rails
   * Rail Guides: https://guides.rubyonrails.org/
-  
+ 
+Other People editing Mastodon Code:
+  * [Increase toot length, example of changing code on running site](https://www.draklyckan.se/2021/11/how-to-increase-the-character-limit-for-toots-in-mastodon/)
