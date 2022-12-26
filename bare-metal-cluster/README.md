@@ -16,7 +16,7 @@ https://www.meshcommander.com/meshcommander
 
 ## Tinkerbell PXE Boot
 
-Going going to get this going with  [Tinkerbell with details](tinkebell.md)
+Going going to get this going with  [Tinkerbell with details](tinkerbell.md)
 
 
 

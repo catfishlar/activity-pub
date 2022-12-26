@@ -38,7 +38,8 @@ So the file store is the thing.
 
  * Use a Nginx proxy https://docs.joinmastodon.org/admin/optional/object-storage-proxy/
 
- * Communal file store. https://jortage.com/
+ * Communal file store. https://jortage.com/   and https://github.com/jortage/poolmgr
+
 
 ## Cleaning up
 

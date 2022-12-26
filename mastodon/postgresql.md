@@ -13,3 +13,8 @@
 
  * Monitoring
    * [PG Hero Montoring](https://github.com/ankane/pghero) 
+
+ * Production Postgres:
+   * [10 TIps for going into Production](https://severalnines.com/blog/ten-tips-going-production-postgresql/)
+     * [Cluster Control has a free option](https://severalnines.com/pricing/#clustercontrol)
+     * [Readable Explain Plans](https://explain.depesz.com/)

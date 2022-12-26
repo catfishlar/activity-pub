@@ -1,6 +1,9 @@
 # Mastodon Stack
 
+
+
 ## References
+ * The Hachyderm community docs. Good stuff here. Check the blogs  https://community.hachyderm.io/
  * Debian, nginx, react.js, node.js (for Streaming API) ,  Ruby on rails, Postgres. https://github.com/mastodon/mastodon
  * The Architecture of Mastodon. https://softwaremill.com/the-architecture-of-mastodon/ 
  * Hachyderm.io. Kris Nova’s setup https://medium.com/@kris-nova/hachyderm-infrastructure-74f518bc7472
