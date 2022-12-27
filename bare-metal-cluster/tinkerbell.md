@@ -357,3 +357,25 @@ So the weird thing is, in `sandbox/deploy/stack/compose/.env`
 
 But neither of those are directories exist.  Given the / in the front, those must be relative to something other than this 
 directory.   
+
+Added values to `.env` instead of `export`s.
+
+root@Tinkerbell:~/src/sandbox/deploy/stack/compose# docker compose up -d
+
+      [+] Running 14/14
+       ⠿ Network compose_default                           Created                                                                                                                0.1s
+       ⠿ Container compose-manifest-update-1               Started                                                                                                               11.6s
+       ⠿ Container compose-fetch-osie-1                    Exited                                                                                                                11.6s
+       ⠿ Container compose-k3s-1                           Healthy                                                                                                              147.3s
+       ⠿ Container compose-fetch-and-convert-ubuntu-img-1  Exited                                                                                                                13.6s
+       ⠿ Container compose-web-assets-server-1             Started                                                                                                               14.9s
+       ⠿ Container compose-tink-crds-apply-1               Exited                                                                                                               159.7s
+       ⠿ Container compose-rufio-crds-apply-1              Exited                                                                                                               159.6s
+       ⠿ Container compose-rufio-1                         Started                                                                                                              161.7s
+       ⠿ Container compose-manifest-apply-1                Started                                                                                                              162.3s
+       ⠿ Container compose-boots-1                         Started                                                                                                              160.6s
+       ⠿ Container compose-tink-controller-1               Started                                                                                                              162.0s
+       ⠿ Container compose-hegel-1                         Started                                                                                                              162.4s
+       ⠿ Container compose-tink-server-1                   Started                                                                                                              162.1s
+
+//#TODO 14 not 15 like in docs. 
