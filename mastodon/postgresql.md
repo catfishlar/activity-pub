@@ -13,6 +13,8 @@
 
  * Monitoring
    * [PG Hero Montoring](https://github.com/ankane/pghero) 
+ * PGBouncer 
+   * Need this to keep your connection pools low.
 
  * Production Postgres:
    * [10 TIps for going into Production](https://severalnines.com/blog/ten-tips-going-production-postgresql/)

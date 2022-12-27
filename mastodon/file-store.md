@@ -40,6 +40,14 @@ So the file store is the thing.
 
  * Communal file store. https://jortage.com/   and https://github.com/jortage/poolmgr
 
+>At first, the easy choice was to set up object storage at DigitalOcean, where the rest 
+of our infrastructure is. Yet, if we're being honest here: I underestimated the rate of 
+growth, and as it turns out, DigitalOcean performs just fine, but when crossing their free 
+tier, it can get expensive. Not for the amount of data stored but for the bandwidth for outgoing traffic.
+>
+>We will migrate our data to Cloudflare R2, API-compatible with S3, just like DigitalOcean, but cheaper for Egress fees.
+
+from https://github.com/toot-community/blog/blob/main/content/posts/migrating-between-object-storage-providers.md
 
 ## Cleaning up
 
