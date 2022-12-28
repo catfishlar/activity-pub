@@ -155,10 +155,75 @@ So for this repo we are using rails-sites  as our starting point and the whole s
 
 If something needs to be independent, then we can break that out, but this tutorial is part of this activity-pub repo
 
+     cd ~/src/activity-pub/rails-sites
 
     rails new ruby_thursday -T
 
 Minus T is to make no tests since we will be using RSpec, which Mastodon uses too. 
 
+I captured the out put of createing ruby_thursday and it is [ruby_thursday.out](../../rails-sites/ruby_thursday.out) 
+
+
     cd ruby_thursday
-    
+    rm -rf .git
+
+I leave  `.gitignore` and `.gitattributes` on the idea that they modify git in the directory in ways that matter to 
+ruby on rails.  
+
+## Ruby Thurday 3 
+
+[Get Launching #3: Setting up Postgres and Rspec on Rails](https://www.youtube.com/watch?v=yOdLXYJHhV8&t=24s)
+
+### Install Postgresql
+
+ended up just installing postgres app from here. https://postgresapp.com/downloads.html  Quick up and down, now fuss 
+no muss, good for these tutorials.  But not much of a Postgres experience. 
+
+![where the configs are](images/postgresql-app.png)
+
+To run the CLI tools using this.. Add this path to your .bashrc
+
+    export PATH="$PATH:/Applications/Postgres.app/Contents/Versions/latest/bin"
+
+then of course its `psql` command.
+
+### Configure Rails
+
+#### GemFile
+
+Gemfile has the code bundles you will use and the versions.  
+
+One thing we change is `sqllite` to `pg`. Where `pg` is postgres. 
+
+You can see versions of gems at https://rubygems.org
+
+from this:
+
+    group :development, :test do
+      # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
+      gem "debug", platforms: %i[ mri mingw x64_mingw ]
+    end
+
+to this:
+
+    group :development, :test do
+      gem 'better_errors'
+      gem 'capybara-webkit'
+      gem 'factory_girl_rails'
+      gem 'ffaker'
+      gem 'database_cleaner'
+      gem 'letter_opener'
+      gem 'rspec-rails'
+      gem 'pry'
+      gem 'pry-nav'
+      gem 'pry-rails'
+      gem 'simple_bdd'
+      gem 'shoulda-matchers'
+      gem 'spring'
+      # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
+      gem "debug", platforms: %i[ mri mingw x64_mingw ]
+    end
+
+#### Bundle
+
+    bundle
