@@ -227,3 +227,190 @@ to this:
 #### Bundle
 
     bundle
+
+failed with 
+
+    To see why this extension failed to compile, please check the mkmf.log which can
+    be found here:
+    
+    /Users/lmurdock/.rvm/gems/ruby-3.0.5/extensions/x86_64-darwin-20/3.0.0/pg-1.4.5/mkmf.log
+
+I then went in there and there was a missing *.h file.  Well as it turns out its becasue of how I have my postgres set up
+but going with [this stackoverflow](https://stackoverflow.com/questions/50272096/pg-1-0-0-fatal-error-libpq-fe-h-file-not-found)
+I installed the library without installing all of postgres.  But this chanes what I have to do.. 
+
+    brew install libpq
+
+ended with the info. 
+
+    ==> Summary
+    🍺  /usr/local/Cellar/libpq/15.1: 2,367 files, 28.1MB
+    ==> Running `brew cleanup libpq`...
+    Disable this behaviour by setting HOMEBREW_NO_INSTALL_CLEANUP.
+    Hide these hints with HOMEBREW_NO_ENV_HINTS (see `man brew`).
+    ==> Caveats
+    ==> libpq
+    libpq is keg-only, which means it was not symlinked into /usr/local,
+    because conflicts with postgres formula.
+    
+    If you need to have libpq first in your PATH, run:
+      echo 'export PATH="/usr/local/opt/libpq/bin:$PATH"' >> /Users/lmurdock/.bash_profile
+    
+    For compilers to find libpq you may need to set:
+      export LDFLAGS="-L/usr/local/opt/libpq/lib"
+      export CPPFLAGS="-I/usr/local/opt/libpq/include"
+
+Which fits with that the stack overflow sez is the next step. 
+
+     bundle config --local build.pg --with-opt-dir="/usr/local/opt/libpq"
+
+oops make sure you are in the rails directory
+
+    cd ~/src/activity-pub/rails-sites/ruby_thursday 
+    bundle config --local build.pg --with-opt-dir="/usr/local/opt/libpq"
+    bundle install
+
+This time the error is with capybara-web-kit and it relates to missing qmake.. which is a part of `qt` ( a local
+client software builder.  yep we used to buid apps before the web)
+
+Fix seems to be to add qt
+
+    brew install qt
+
+then
+    
+    bundle install
+
+then 
+
+    Project ERROR: No QtWebKit installation found. QtWebKit is no longer included with Qt 5.6, so you may
+    need to install it separately.
+
+So the answer to this is to install 5.5.
+
+    HilarysMacPro:ruby_thursday lmurdock$ brew uninstall qt
+    Uninstalling /usr/local/Cellar/qt/6.4.1_1... (13,354 files, 578.3MB)
+    HilarysMacPro:ruby_thursday lmurdock$ brew uninstall qt@5
+    Error: No such keg: /usr/local/Cellar/qt@5
+    HilarysMacPro:ruby_thursday lmurdock$ cd $( brew --prefix )/Homebrew/Library/Taps/homebrew/homebrew-core
+    HilarysMacPro:homebrew-core lmurdock$ git checkout 9ba3d6ef8891e5c15dbdc9333f857b13711d4e97 Formula/qt@5.5.rb
+    Updated 1 path from 741af0285f9
+    HilarysMacPro:homebrew-core lmurdock$ brew install qt@5.5
+
+from [this page](https://til.magmalabs.io/posts/308d996344-fixing-the-capybara-webkit-gem-installation-qtwebkit-is-no-longer-included-with-qt-56-error-on-m1-mac-with-big-sur)
+
+Gah.. did you catch it.. 
+
+    Error: No such keg: /usr/local/Cellar/qt@5
+
+and messing with the file did not help much. 
+
+So this seems definitive.. https://github.com/Homebrew/homebrew-core/issues/32467
+
+>Is there anyway to be able to install Qt 5.5?
+> 
+>fxcoudert commented on Oct 9, 2018
+>
+>Not from Homebrew core, we do not provide this version anymore, as it failed to build on recent macOS versions.
+
+hmm after looking around a bit, I looked at the Gemfile of mastodon and see that they use 
+
+    gem capybara
+not 
+
+    gem capybara-webkit
+
+So went with that.   This goes to show you.. the config issues of bitrotting Ruby and OLD tutorials.  
+
+And finally we have everything.  Now is it going to work.  
+
+####  Database Config
+
+Change `config/database.yml` to use postgres. and change the names of the databases. 
+
+        HilarysMacPro:config lmurdock$ git diff database.yml.org database.yml
+        diff --git a/rails-sites/ruby_thursday/config/database.yml b/rails-sites/ruby_thursday/config/database.yml
+        index fcba57f..7ad8985 100644
+        --- a/rails-sites/ruby_thursday/config/database.yml
+        +++ b/rails-sites/ruby_thursday/config/database.yml
+        @@ -3,23 +3,25 @@
+         #
+         #   Ensure the SQLite 3 gem is defined in your Gemfile
+         #   gem "sqlite3"
+        +#   we are doing Postgress so
+        +#   gem "pg"
+         #
+         default: &default
+         -  adapter: sqlite3
+         + adapter: postgresql
+         pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+         timeout: 5000
+ 
+         development:
+           <<: *default
+         -  database: db/development.sqlite3
+         + database: db/ruby_thursday_development
+ 
+         # Warning: The database defined as "test" will be erased and
+         # re-generated from your development database when you run "rake".
+         # Do not set this db to the same as development or production.
+         test:
+           <<: *default
+         -  database: db/test.sqlite3
+         + database: db/ruby_thursday_test
+         
+         production:
+           <<: *default
+         -  database: db/production.sqlite3
+         + database: db/ruby_thursday_production
+
+#### Rake DB:Create
+
+Make sure to go back to the base of the rails app in my case
+
+    cd /Users/lmurdock/src/activity-pub/rails-sites/ruby_thursday
+    rake db:create
+
+#### Install RSpec
+
+    /Users/lmurdock/src/activity-pub/rails-sites/ruby_thursday
+    HilarysMacPro:ruby_thursday lmurdock$ rails generate rspec:install
+    DEPRECATION WARNING: The factory_girl gem is deprecated. Please upgrade to factory_bot. See https://github.com/thoughtbot/factory_bot/blob/v4.9.0/UPGRADE_FROM_FACTORY_GIRL.md for further instructions. (called from <main> at /Users/lmurdock/src/activity-pub/rails-sites/ruby_thursday/config/application.rb:19)
+          create  .rspec
+          create  spec
+          create  spec/spec_helper.rb
+          create  spec/rails_helper.rb
+
+
+#### Add Gems to Rspec
+
+          create  spec/rails_helper.rb
+    HilarysMacPro:ruby_thursday lmurdock$ cd spec/
+    HilarysMacPro:spec lmurdock$ vi rails_helper.rb
+
+The world looks pretty different these days in there.. but we added these 3. 
+
+    require 'spec_helper'
+    require 'simple_bdd'
+    require 'capybara/rspec'
+
+And also add this after `config.use_transactional_fixtures = true`
+
+      config.use_transactional_fixtures = true
+    
+      #from https://www.youtube.com/watch?v=yOdLXYJHhV8&t=24s
+      config.include SimpleBdd, type: :feature
+        # config.include Devise::TestHelpers, :type => :controller 
+        config.before(:suite) do
+          DatabaseCleaner.strategy = :truncation
+          DatabaseCleaner.clean_with(:truncation)
+        end
+      
+        config.before(:each) do 
+          DatabaseCleaner.start
+        end
+    
+        config.after(:each) do 
+          DatabaseCleaner.clean
+        end
+
