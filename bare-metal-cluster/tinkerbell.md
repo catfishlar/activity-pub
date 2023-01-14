@@ -1,9 +1,18 @@
 # Tinkerbell
 
+Outline:
+ * [Boot Flow](#the-boot-flow)
+ * [Tinkerbell Architecture](#tinkerbell-inside)
+ * [The Install](#the-install)
+    *[Home ROuter Setup](#home-router-config-for-dhcp-reservations)
+   * [Virtual Box](#virtual-box-control-server-for-provisioning-stack)
+   * [Try Helm](#bringing-up-a-provisioner-stack-with-kubernetes)
+   * [Try Docker Compose](#bringing-up-a-provisioner-stack-with-docker-compose--got-stuck-but-here-it-is-)
+
 References:
  * Main Website [tinkerbell.org](https://tinkerbell.org)
 
-### The Boot Flow
+## The Boot Flow
 [TInkerbell 101](https://www.youtube.com/watch?v=Y04eCSKaQCc)
 
 Acronyms
@@ -26,7 +35,7 @@ The Boot Flow
 
 Custom Scripting and Old Legacy Software.  THese tech are from the 90s.
 
-### Tinkerbell Inside
+## Tinkerbell Inside
 
 Tinkerbell is new. 2020s baremetal stack. 
 
@@ -151,7 +160,91 @@ to local DNS names.
     i3nuc2 is 192.168.0.54
     i3nuc3 is 192.168.0.55
 
-### Bringing up a Provisioner Stack with Docker Compose
+### Bringing up a Provisioner Stack with Kubernetes
+
+https://github.com/tinkerbell/charts/tree/main/tinkerbell/stack
+
+I did the docker compose before trying kubernetes so check what I set up [there](#bringing-up-a-provisioner-stack-with-docker-compose--got-stuck-but-here-it-is-)
+
+Install Minikube 
+
+ * https://minikube.sigs.k8s.io/docs/start/
+      
+      curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
+      sudo dpkg -i minikube_latest_amd64.deb
+
+then as root I did: 
+
+      root@Tinkerbell:~/src/sandbox/deploy/stack/compose# minikube start
+      😄  minikube v1.28.0 on Ubuntu 22.04 (vbox/amd64)
+      ✨  Automatically selected the docker driver. Other choices: ssh, none
+      🛑  The "docker" driver should not be used with root privileges. If you wish to continue as root, use --force.
+      💡  If you are running minikube within a VM, consider using --driver=none:
+      📘    https://minikube.sigs.k8s.io/docs/reference/drivers/none/
+      
+      ❌  Exiting due to DRV_AS_ROOT: The "docker" driver should not be used with root privileges.
+
+switching to ubuntu:
+      
+      ubuntu@Tinkerbell:~$ minikube start
+      😄  minikube v1.28.0 on Ubuntu 22.04 (vbox/amd64)
+      👎  Unable to pick a default driver. Here is what was considered, in preference order:
+          ▪ docker: Not healthy: "docker version --format {{.Server.Os}}-{{.Server.Version}}" exit status 1: Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get "http://%2Fvar%2Frun%2Fdocker.sock/v1.24/version": dial unix /var/run/docker.sock: connect: permission denied
+          ▪ docker: Suggestion: Add your user to the 'docker' group: 'sudo usermod -aG docker $USER && newgrp docker' <https://docs.docker.com/engine/install/linux-postinstall/>
+      💡  Alternatively you could install one of these drivers:
+          ▪ kvm2: Not installed: exec: "virsh": executable file not found in $PATH
+          ▪ podman: Not installed: exec: "podman": executable file not found in $PATH
+          ▪ vmware: Not installed: exec: "docker-machine-driver-vmware": executable file not found in $PATH
+          ▪ virtualbox: Not installed: unable to find VBoxManage in $PATH
+          ▪ qemu2: Not installed: exec: "qemu-system-x86_64": executable file not found in $PATH
+      
+      ❌  Exiting due to DRV_NOT_HEALTHY: Found driver(s) but none were healthy. See above for suggestions how to fix installed drivers.
+      
+Doing what they suggested.. 
+
+      ubuntu@Tinkerbell:~$ sudo usermod -aG docker $USER && newgrp docker
+      ubuntu@Tinkerbell:~$ minikube start
+
+And we are gold
+
+      ubuntu@Tinkerbell:~$ kubectl get pods
+      No resources found in default namespace.
+
+Install helm
+
+https://helm.sh/docs/intro/install/
+
+      curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+      sudo apt-get install apt-transport-https --yes
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+      sudo apt-get update
+      sudo apt-get install helm
+
+THis all worked and I ended up with
+
+      ubuntu@Tinkerbell:~/src$ helm version
+      version.BuildInfo{Version:"v3.10.3", GitCommit:"835b7334cfe2e5e27870ab3ed4135f136eecc704", GitTreeState:"clean", GoVersion:"go1.18.9"}
+
+
+get the chart repo
+
+edit the values.yaml per the document https://github.com/tinkerbell/charts/tree/main/tinkerbell/stack
+
+cd to `~/src/charts/tinkerbell`
+
+
+      ubuntu@Tinkerbell:~/src/charts/tinkerbell/stack$ vi values.yaml 
+      ubuntu@Tinkerbell:~/src/charts/tinkerbell/stack$ cd .. 
+      ubuntu@Tinkerbell:~/src/charts/tinkerbell$ helm dependency build stack/
+      Saving 4 charts
+      Deleting outdated charts
+      ubuntu@Tinkerbell:~/src/charts/tinkerbell$ trusted_proxies=$(kubectl get nodes -o jsonpath='{.items[*].spec.podCIDR}' | tr ' ' ',')
+      ubuntu@Tinkerbell:~/src/charts/tinkerbell$ helm install stack-release stack/ --create-namespace --namespace tink-system --wait --set "boots.trustedProxies=${trusted_proxies}" --set "hegel.trustedProxies=${trusted_proxies}"
+
+
+
+
+### Bringing up a Provisioner Stack with Docker Compose (Got stuck but here it is)
 
 [Tinkerbell Sandbox doc for Docker Compose](https://github.com/tinkerbell/sandbox/blob/main/docs/quickstarts/COMPOSE.md)
 
@@ -378,4 +471,12 @@ root@Tinkerbell:~/src/sandbox/deploy/stack/compose# docker compose up -d
        ⠿ Container compose-hegel-1                         Started                                                                                                              162.4s
        ⠿ Container compose-tink-server-1                   Started                                                                                                              162.1s
 
-//#TODO 14 not 15 like in docs. 
+//#TODO 14 not 15 like in docs.
+
+And the missing export for the documentation is that you also have to set the 
+
+      export TINKERBELL_CLIENT_GW=192.168.0.1
+
+
+
+### 
