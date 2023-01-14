@@ -13,7 +13,6 @@ So the first thing I want to do is go to root, create the standard aws ubuntu us
 and then make `ubuntu` a `sudoer` and use that for my admin account. 
     
     su -
-    apt update 
     useradd -m ubuntu
      this creates a /home/ubuntu
     passwd ubuntu
