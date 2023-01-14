@@ -9,6 +9,7 @@
  * Hachyderm.io. Kris Nova’s setup https://medium.com/@kris-nova/hachyderm-infrastructure-74f518bc7472
  * Scaling a Mastadon Instance. https://leah.is/posts/scaling-the-mastodon/
  * Scaling Mastadon.  https://hazelweakly.me/blog/scaling-mastodon/
+ * Mindly Social, 30,000 users for $100 a month.  Complex is not necessarily better https://mindly.social/@KuJoe/109632259282766071
 
 ## Code Base
 
