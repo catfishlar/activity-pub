@@ -88,6 +88,21 @@ This didn't work. vboxuser could still log in with password
 
 Rebooting didn't help either. 
 
+### Is your /var/log/syslog filling up with GTK-bridge errors? 
+
+Every 2 seconds we got this error. 
+
+    Jan 31 21:36:38 tinkerbell2 systemd[2963]: Stopped Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+    Jan 31 21:36:38 tinkerbell2 systemd[2963]: Started Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+    Jan 31 21:36:38 tinkerbell2 snapd-desktop-i[19912]: Not loading module "atk-bridge": The functionality is provided by GTK natively. Please try to not load it.
+    Jan 31 21:36:38 tinkerbell2 snapd-desktop-integration.snapd-desktop-integration[19912]: Failed to do gtk init
+    Jan 31 21:36:40 tinkerbell2 systemd[2963]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Scheduled restart job, restart counter is at 253.
+
+
+TO fix I added
+
+    sudo snap remove snapd-desktop-integration
+
 
 ## Docker 
 
